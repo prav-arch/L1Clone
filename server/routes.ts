@@ -6,32 +6,33 @@ import multer from "multer";
 import { WebSocketServer } from "ws";
 import { spawn } from "child_process";
 import path from "path";
+import WebSocket from 'ws';
 
-const upload = multer({ 
+const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 100 * 1024 * 1024 } // 100MB limit
 });
 
 export async function registerRoutes(app: Express): Promise<Server> {
   const httpServer = createServer(app);
-  
+
   // WebSocket setup for streaming responses
-  const wss = new WebSocketServer({ 
+  const wss = new WebSocketServer({
     server: httpServer,
     path: '/ws'
   });
-  
+
   wss.on('connection', (ws) => {
     console.log('WebSocket client connected');
-    
+
     ws.on('message', async (message) => {
       try {
         const data = JSON.parse(message.toString());
-        
+
         if (data.type === 'get_recommendations') {
           const { anomalyId } = data;
           console.log('🔍 Received recommendation request for anomaly ID:', anomalyId);
-          
+
           // Get anomaly details from storage
           const anomaly = await storage.getAnomaly(anomalyId);
           if (!anomaly) {
@@ -39,9 +40,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
             ws.send(JSON.stringify({ type: 'error', data: 'Anomaly not found' }));
             return;
           }
-          
+
           console.log('✅ Found anomaly:', anomaly.id, anomaly.type);
-          
+
           // Call TSLAM AI service for real recommendations
           console.log('🚀 Starting TSLAM AI service for anomaly:', anomalyId);
           const pythonProcess = spawn('python3', [
@@ -49,17 +50,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
             anomalyId.toString(),
             anomaly.description || 'Network anomaly detected'
           ]);
-          
+
           pythonProcess.stdout.on('data', (chunk) => {
             const text = chunk.toString();
             ws.send(JSON.stringify({ type: 'recommendation_chunk', data: text }));
           });
-          
+
           pythonProcess.stderr.on('data', (error) => {
             console.error('TSLAM Service Log:', error.toString());
             // Log model loading and GPU initialization messages
           });
-          
+
           pythonProcess.on('close', (code) => {
             console.log('🏁 TSLAM AI service completed with code:', code);
             if (code === 0) {
@@ -74,7 +75,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ws.send(JSON.stringify({ type: 'error', data: 'Invalid message format' }));
       }
     });
-    
+
     ws.on('close', () => {
       console.log('WebSocket client disconnected');
     });
@@ -119,7 +120,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const offset = parseInt(req.query.offset as string) || 0;
       const type = req.query.type as string;
       const severity = req.query.severity as string;
-      
+
       const anomalies = await storage.getAnomalies(limit, offset, type, severity);
       res.json(anomalies);
     } catch (error) {
@@ -185,7 +186,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const { originalname, size, buffer } = req.file;
       const fileType = originalname.endsWith('.pcap') || originalname.endsWith('.pcapng') ? 'pcap' : 'log';
-      
+
       // Create file record
       const file = await storage.createProcessedFile({
         filename: originalname,
@@ -199,10 +200,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       setImmediate(async () => {
         try {
           await storage.updateFileStatus(file.id, 'processing');
-          
+
           const startTime = Date.now();
           let anomaliesFound = 0;
-          
+
           if (fileType === 'pcap') {
             // Process PCAP file
             const pythonProcess = spawn('python3', [
@@ -210,15 +211,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
               '--file-id', file.id,
               '--filename', originalname
             ]);
-            
+
             // Save file content to temp location for processing
             const fs = require('fs');
             const tempPath = path.join('/tmp', originalname);
             fs.writeFileSync(tempPath, buffer);
-            
+
             pythonProcess.stdin.write(tempPath);
             pythonProcess.stdin.end();
-            
+
             pythonProcess.on('close', async (code) => {
               const processingTime = Date.now() - startTime;
               if (code === 0) {
@@ -236,10 +237,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
               '--file-id', file.id,
               '--filename', originalname
             ]);
-            
+
             pythonProcess.stdin.write(buffer.toString());
             pythonProcess.stdin.end();
-            
+
             pythonProcess.on('close', async (code) => {
               const processingTime = Date.now() - startTime;
               if (code === 0) {
@@ -289,14 +290,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { id } = req.params;
       const anomaly = await storage.getAnomaly(id);
-      
+
       if (!anomaly) {
         return res.status(404).json({ message: 'Anomaly not found' });
       }
 
       // Generate recommendation based on anomaly type and details
       let recommendation = '';
-      
+
       if (anomaly.type === 'fronthaul') {
         recommendation = 'Check physical connections between DU and RU. Verify fronthaul timing synchronization is within 100μs threshold. Monitor packet loss rates and communication ratios.';
       } else if (anomaly.type === 'ue_event') {

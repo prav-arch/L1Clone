@@ -1,0 +1,52 @@
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: l1-troubleshooting
+  labels:
+    app: l1-troubleshooting
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: l1-troubleshooting
+  template:
+    metadata:
+      labels:
+        app: l1-troubleshooting
+    spec:
+      containers:
+      - name: l1-app
+        image: node:18-alpine
+        ports:
+        - containerPort: 5000
+        env:
+        - name: PORT
+          value: "5000"
+        - name: NODE_ENV
+          value: "production"
+        - name: CLICKHOUSE_URL
+          value: "http://clickhouse-service:8123"
+        - name: CLICKHOUSE_DATABASE
+          value: "l1_anomaly_detection"
+        - name: TSLAM_REMOTE_HOST
+          value: "10.193.0.4"
+        - name: TSLAM_REMOTE_PORT
+          value: "8080"
+        command: ["/bin/sh"]
+        args: ["-c", "npm install && npm run build && npm start"]
+        workingDir: /app
+        volumeMounts:
+        - name: app-code
+          mountPath: /app
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+      volumes:
+      - name: app-code
+        configMap:
+          name: l1-app-code

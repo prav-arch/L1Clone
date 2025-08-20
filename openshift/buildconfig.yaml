@@ -1,0 +1,31 @@
+
+apiVersion: build.openshift.io/v1
+kind: BuildConfig
+metadata:
+  name: l1-troubleshooting-build
+spec:
+  source:
+    type: Git
+    git:
+      uri: https://github.com/your-repo/l1-troubleshooting
+  strategy:
+    type: Docker
+    dockerStrategy:
+      dockerfilePath: Dockerfile
+  output:
+    to:
+      kind: ImageStreamTag
+      name: l1-troubleshooting:latest
+  triggers:
+  - type: ConfigChange
+  - type: GitHub
+    github:
+      secret: webhook-secret
+---
+apiVersion: image.openshift.io/v1
+kind: ImageStream
+metadata:
+  name: l1-troubleshooting
+spec:
+  lookupPolicy:
+    local: false
