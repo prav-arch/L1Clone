@@ -102,6 +102,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Dashboard metrics with percentage changes
+  app.get("/api/dashboard/metrics-with-changes", async (req, res) => {
+    try {
+      const metricsWithChanges = await storage.getDashboardMetricsWithChanges();
+      res.json(metricsWithChanges);
+    } catch (error) {
+      console.error("Error fetching dashboard metrics with changes:", error);
+      res.status(500).json({ 
+        error: "Failed to fetch dashboard metrics with percentage changes" 
+      });
+    }
+  });
+
   app.get("/api/dashboard/trends", async (req, res) => {
     try {
       if (!clickhouse.isAvailable()) {

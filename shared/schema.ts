@@ -95,6 +95,13 @@ export type DashboardMetrics = {
   filesProcessed: number;
 };
 
+export type DashboardMetricsWithChanges = DashboardMetrics & {
+  totalAnomaliesChange: number;
+  sessionsAnalyzedChange: number;
+  detectionRateChange: number;
+  filesProcessedChange: number;
+};
+
 export type AnomalyTrend = {
   date: string;
   count: number;

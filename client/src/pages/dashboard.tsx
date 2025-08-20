@@ -1,11 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
 import MetricCard from "@/components/metric-card";
 import { AlertTriangle, BarChart3, Shield, FileText } from "lucide-react";
-import type { DashboardMetrics, AnomalyTrend, AnomalyTypeBreakdown } from "@shared/schema";
+import type { DashboardMetrics, DashboardMetricsWithChanges, AnomalyTrend, AnomalyTypeBreakdown } from "@shared/schema";
 
 export default function Dashboard() {
-  const { data: metrics, isLoading: metricsLoading } = useQuery<DashboardMetrics>({
-    queryKey: ["/api/dashboard/metrics"],
+  const { data: metricsWithChanges, isLoading: metricsLoading } = useQuery<DashboardMetricsWithChanges>({
+    queryKey: ["/api/dashboard/metrics-with-changes"],
     refetchInterval: 30000, // Refetch every 30 seconds
   });
 
@@ -49,33 +49,33 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <MetricCard
           title="Total Anomalies"
-          value={metrics?.totalAnomalies || 0}
-          change={formatChangeValue(12.5)}
-          changeType="negative"
+          value={metricsWithChanges?.totalAnomalies || 0}
+          change={formatChangeValue(metricsWithChanges?.totalAnomaliesChange)}
+          changeType={metricsWithChanges?.totalAnomaliesChange && metricsWithChanges.totalAnomaliesChange >= 0 ? "negative" : "positive"}
           icon={AlertTriangle}
           iconColor="red"
         />
         <MetricCard
           title="Sessions Analyzed"
-          value={metrics?.sessionsAnalyzed || 0}
-          change={formatChangeValue(8.2)}
-          changeType="positive"
+          value={metricsWithChanges?.sessionsAnalyzed || 0}
+          change={formatChangeValue(metricsWithChanges?.sessionsAnalyzedChange)}
+          changeType={metricsWithChanges?.sessionsAnalyzedChange && metricsWithChanges.sessionsAnalyzedChange >= 0 ? "positive" : "negative"}
           icon={BarChart3}
           iconColor="blue"
         />
         <MetricCard
           title="Detection Rate"
-          value={`${metrics?.detectionRate || 0}%`}
-          change={formatChangeValue(2.1)}
-          changeType="positive"
+          value={`${metricsWithChanges?.detectionRate || 0}%`}
+          change={formatChangeValue(metricsWithChanges?.detectionRateChange)}
+          changeType={metricsWithChanges?.detectionRateChange && metricsWithChanges.detectionRateChange >= 0 ? "positive" : "negative"}
           icon={Shield}
           iconColor="green"
         />
         <MetricCard
           title="Files Processed"
-          value={metrics?.filesProcessed || 0}
-          change={formatChangeValue(15.3)}
-          changeType="positive"
+          value={metricsWithChanges?.filesProcessed || 0}
+          change={formatChangeValue(metricsWithChanges?.filesProcessedChange)}
+          changeType={metricsWithChanges?.filesProcessedChange && metricsWithChanges.filesProcessedChange >= 0 ? "positive" : "negative"}
           icon={FileText}
           iconColor="purple"
         />
