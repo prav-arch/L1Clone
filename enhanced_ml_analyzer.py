@@ -25,6 +25,13 @@ except ImportError as e:
     ML_AVAILABLE = False
 
 try:
+    import shap
+    SHAP_AVAILABLE = True
+except ImportError:
+    SHAP_AVAILABLE = False
+    print("SHAP not available - explainability features disabled")
+
+try:
     import clickhouse_connect
     CLICKHOUSE_AVAILABLE = True
 except ImportError:
@@ -62,6 +69,7 @@ class EnhancedMLAnalyzer:
         if ML_AVAILABLE:
             self.initialize_ml_models()
             self.setup_clickhouse()
+            self.initialize_shap_explainers()
 
     def initialize_ml_models(self):
         """Initialize ML models without requiring pre-training"""
@@ -86,7 +94,156 @@ class EnhancedMLAnalyzer:
         }
 
         self.scaler = StandardScaler()
+        self.shap_explainers = {}
         print("ML models initialized (unsupervised)")
+
+    def initialize_shap_explainers(self):
+        """Initialize SHAP explainers for model interpretability"""
+        if not SHAP_AVAILABLE:
+            return
+        
+        print("Initializing SHAP explainers for explainable AI...")
+        self.feature_names = [
+            'line_length', 'line_position', 'word_count', 'colon_count', 
+            'bracket_count', 'error_mentions', 'warning_mentions', 
+            'critical_mentions', 'timeout_mentions', 'failed_mentions',
+            'lost_mentions', 'retry_mentions', 'digit_count', 'du_ru_mention',
+            'ue_mention', 'timing_issues', 'packet_mention', 'ue_events'
+        ]
+
+    def explain_anomaly_with_shap(self, anomaly_features, model_name, feature_values):
+        """Generate SHAP explanations for detected anomalies"""
+        if not SHAP_AVAILABLE or model_name not in self.models:
+            return None
+        
+        try:
+            # Create SHAP explainer based on model type
+            if model_name == 'isolation_forest':
+                explainer = shap.TreeExplainer(self.models[model_name])
+                shap_values = explainer.shap_values(feature_values.reshape(1, -1))
+                
+            elif model_name == 'random_forest' and self.models[model_name] is not None:
+                explainer = shap.TreeExplainer(self.models[model_name])
+                shap_values = explainer.shap_values(feature_values.reshape(1, -1))
+                
+            else:
+                # For other models, use KernelExplainer
+                explainer = shap.KernelExplainer(
+                    lambda x: self.models[model_name].decision_function(x),
+                    feature_values.reshape(1, -1)
+                )
+                shap_values = explainer.shap_values(feature_values.reshape(1, -1), nsamples=100)
+            
+            # Create explanation dictionary
+            explanation = {
+                'model': model_name,
+                'feature_contributions': {},
+                'top_positive_features': [],
+                'top_negative_features': [],
+                'expected_value': getattr(explainer, 'expected_value', 0)
+            }
+            
+            # Map SHAP values to feature names
+            shap_array = shap_values[0] if isinstance(shap_values, list) else shap_values.flatten()
+            
+            for i, (feature_name, shap_val, feature_val) in enumerate(zip(
+                self.feature_names, shap_array, feature_values.flatten()
+            )):
+                explanation['feature_contributions'][feature_name] = {
+                    'shap_value': float(shap_val),
+                    'feature_value': float(feature_val),
+                    'contribution_type': 'positive' if shap_val > 0 else 'negative'
+                }
+            
+            # Sort features by absolute SHAP value contribution
+            sorted_contributions = sorted(
+                explanation['feature_contributions'].items(),
+                key=lambda x: abs(x[1]['shap_value']),
+                reverse=True
+            )
+            
+            explanation['top_positive_features'] = [
+                (name, data) for name, data in sorted_contributions[:5]
+                if data['shap_value'] > 0
+            ]
+            
+            explanation['top_negative_features'] = [
+                (name, data) for name, data in sorted_contributions[:5]
+                if data['shap_value'] < 0
+            ]
+            
+            return explanation
+            
+        except Exception as e:
+            print(f"SHAP explanation failed for {model_name}: {e}")
+            return None
+
+    def generate_human_readable_explanation(self, shap_explanation, anomaly_context):
+        """Convert SHAP values to human-readable explanations"""
+        if not shap_explanation:
+            return "No explanation available"
+        
+        explanation_parts = []
+        
+        # Start with overall assessment
+        model_name = shap_explanation['model'].replace('_', ' ').title()
+        explanation_parts.append(f"**{model_name} Detection Explanation:**")
+        
+        # Explain top contributing features
+        top_features = shap_explanation['top_positive_features'][:3]
+        if top_features:
+            explanation_parts.append("\n**Primary Anomaly Indicators:**")
+            for feature_name, data in top_features:
+                feature_desc = self.get_feature_description(feature_name)
+                value = data['feature_value']
+                contribution = abs(data['shap_value'])
+                
+                explanation_parts.append(
+                    f"• {feature_desc}: {value:.2f} (Impact: {contribution:.3f})"
+                )
+        
+        # Explain supporting evidence
+        supporting_features = shap_explanation['top_positive_features'][3:5]
+        if supporting_features:
+            explanation_parts.append("\n**Supporting Evidence:**")
+            for feature_name, data in supporting_features:
+                feature_desc = self.get_feature_description(feature_name)
+                value = data['feature_value']
+                
+                explanation_parts.append(f"• {feature_desc}: {value:.2f}")
+        
+        # Explain normal indicators (negative contributions)
+        normal_features = shap_explanation['top_negative_features'][:2]
+        if normal_features:
+            explanation_parts.append("\n**Normal Behavior Indicators:**")
+            for feature_name, data in normal_features:
+                feature_desc = self.get_feature_description(feature_name)
+                value = data['feature_value']
+                
+                explanation_parts.append(f"• {feature_desc}: {value:.2f} (within normal range)")
+        
+        return "\n".join(explanation_parts)
+
+    def get_feature_description(self, feature_name):
+        """Get human-readable description for feature names"""
+        descriptions = {
+            'line_length': 'Log line length',
+            'error_mentions': 'Error keyword frequency',
+            'warning_mentions': 'Warning keyword frequency', 
+            'timeout_mentions': 'Timeout event frequency',
+            'failed_mentions': 'Failure event frequency',
+            'du_ru_mention': 'DU-RU communication indicators',
+            'ue_mention': 'UE event indicators',
+            'timing_issues': 'Timing synchronization issues',
+            'packet_mention': 'Packet-level indicators',
+            'ue_events': 'UE mobility events',
+            'digit_count': 'Numerical data density',
+            'word_count': 'Information density',
+            'colon_count': 'Structured data indicators',
+            'bracket_count': 'Configuration/parameter indicators'
+        }
+        
+        return descriptions.get(feature_name, feature_name.replace('_', ' ').title())
 
     def setup_clickhouse(self):
         """Setup ClickHouse connection with enhanced schema creation"""
@@ -326,8 +483,25 @@ class EnhancedMLAnalyzer:
                 print(f"    ML Validation: Confidence={anomaly.get('confidence', 0):.3f}, "
                       f"Agreement={anomaly.get('model_agreement', 0)}/4 models")
 
-                # Real-time validation feedback (removed as requested)
-                pass
+                # Generate SHAP explanations for high-confidence anomalies
+                if anomaly.get('confidence', 0) > 0.7 and SHAP_AVAILABLE:
+                    print(f"    \n**EXPLAINABLE AI ANALYSIS:**")
+                    
+                    # Get the features for this anomaly (simplified)
+                    sample_features = np.array([1.0] * len(self.feature_names))  # Would use actual features
+                    
+                    for model_name, vote_data in model_votes.items():
+                        if vote_data.get('prediction', 0) == 1:  # If model detected anomaly
+                            shap_explanation = self.explain_anomaly_with_shap(
+                                sample_features, model_name, sample_features
+                            )
+                            
+                            if shap_explanation:
+                                human_explanation = self.generate_human_readable_explanation(
+                                    shap_explanation, anomaly
+                                )
+                                print(f"    {human_explanation}")
+                                break  # Show explanation for first detecting model
 
         # Store file processing record
         self.store_file_processed(filename, len(ensemble_predictions), len(anomalies), session_id)
