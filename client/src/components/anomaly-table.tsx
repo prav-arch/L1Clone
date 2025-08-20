@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/select";
 import { Search, RefreshCw, AlertTriangle, Smartphone, Network, Shield } from "lucide-react";
 import { RecommendationsPopup } from "./RecommendationsPopup";
+import { ExplainableAIModal } from "./ExplainableAIModal";
 import type { Anomaly } from "@shared/schema";
 
 export default function AnomalyTable() {
@@ -27,6 +28,8 @@ export default function AnomalyTable() {
   const [severityFilter, setSeverityFilter] = useState("all");
   const [selectedAnomaly, setSelectedAnomaly] = useState<Anomaly | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedAnomalyForDetails, setSelectedAnomalyForDetails] = useState<Anomaly | null>(null);
+  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
 
   const { data: anomalies = [], isLoading, refetch } = useQuery<Anomaly[]>({
     queryKey: ["/api/anomalies"],
@@ -71,6 +74,11 @@ export default function AnomalyTable() {
   const handleGetRecommendations = (anomaly: Anomaly) => {
     setSelectedAnomaly(anomaly);
     setIsModalOpen(true);
+  };
+
+  const handleGetDetails = (anomaly: Anomaly) => {
+    setSelectedAnomalyForDetails(anomaly);
+    setIsDetailsModalOpen(true);
   };
 
   // Filter anomalies based on search and filters
@@ -208,14 +216,25 @@ export default function AnomalyTable() {
                       </span>
                     </TableCell>
                     <TableCell>
-                      <Button
-                        size="sm"
-                        onClick={() => handleGetRecommendations(anomaly)}
-                        className="bg-blue-600 text-white hover:bg-blue-700 text-xs px-3 py-1"
-                        data-testid={`button-recommendations-${anomaly.id}`}
-                      >
-                        Get Recommendations
-                      </Button>
+                      <div className="flex space-x-2">
+                        <Button
+                          size="sm"
+                          onClick={() => handleGetRecommendations(anomaly)}
+                          className="bg-blue-600 text-white hover:bg-blue-700 text-xs px-3 py-1"
+                          data-testid={`button-recommendations-${anomaly.id}`}
+                        >
+                          Get Recommendations
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleGetDetails(anomaly)}
+                          className="text-xs px-3 py-1 border-blue-600 text-blue-600 hover:bg-blue-50"
+                          data-testid={`button-details-${anomaly.id}`}
+                        >
+                          Details
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))
@@ -253,6 +272,12 @@ export default function AnomalyTable() {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         anomaly={selectedAnomaly}
+      />
+
+      <ExplainableAIModal
+        isOpen={isDetailsModalOpen}
+        onClose={() => setIsDetailsModalOpen(false)}
+        anomaly={selectedAnomalyForDetails}
       />
     </>
   );

@@ -842,6 +842,90 @@ export class ClickHouseStorage implements IStorage {
       return [];
     }
   }
+
+  async getExplainableAIData(anomalyId: string, contextData: any): Promise<any> {
+    try {
+      if (!this.clickhouse.isAvailable()) {
+        throw new Error("ClickHouse not available for explainable AI data");
+      }
+
+      // Extract SHAP explanation data from context_data
+      const modelVotes = contextData.model_votes || {};
+      const shapData = contextData.shap_explanation || {};
+
+      const modelExplanations: any = {};
+
+      // Process each model's contribution
+      Object.entries(modelVotes).forEach(([modelName, voteData]: [string, any]) => {
+        modelExplanations[modelName] = {
+          confidence: voteData.confidence || 0,
+          decision: voteData.prediction === 1 ? 'ANOMALY' : 'NORMAL',
+          feature_contributions: shapData[modelName]?.feature_contributions || {},
+          top_positive_features: shapData[modelName]?.top_positive_features || [],
+          top_negative_features: shapData[modelName]?.top_negative_features || []
+        };
+      });
+
+      const featureDescriptions = {
+        'packet_timing': 'Inter-packet arrival time variations',
+        'size_variation': 'Packet size distribution patterns',
+        'sequence_gaps': 'Missing or out-of-order packets',
+        'protocol_anomalies': 'Protocol header irregularities',
+        'fronthaul_timing': 'DU-RU synchronization timing',
+        'ue_event_frequency': 'Rate of UE state changes',
+        'mac_address_patterns': 'MAC address behavior analysis',
+        'rsrp_variation': 'Reference Signal Received Power changes',
+        'rsrq_patterns': 'Reference Signal Received Quality patterns',
+        'sinr_stability': 'Signal-to-Interference-plus-Noise ratio stability',
+        'eCPRI_seq_analysis': 'eCPRI sequence number analysis',
+        'rru_timing_drift': 'Remote Radio Unit timing drift',
+        'du_response_time': 'Distributed Unit response latency'
+      };
+
+      const humanExplanation = contextData.human_explanation || 
+        this.generateHumanExplanation(modelExplanations, contextData);
+
+      return {
+        model_explanations: modelExplanations,
+        human_explanation: humanExplanation,
+        feature_descriptions: featureDescriptions,
+        overall_confidence: contextData.confidence || 0.75,
+        model_agreement: Object.values(modelVotes).filter((vote: any) => vote.prediction === 1).length
+      };
+    } catch (error) {
+      console.error('Failed to get explainable AI data:', error);
+      throw error;
+    }
+  }
+
+  private generateHumanExplanation(modelExplanations: any, contextData: any): string {
+    const agreementCount = Object.values(modelExplanations).filter((model: any) => model.decision === 'ANOMALY').length;
+
+    let explanation = `**Machine Learning Analysis Results**\n\n`;
+    explanation += `${agreementCount} out of ${Object.keys(modelExplanations).length} algorithms detected this as an anomaly.\n\n`;
+
+    // Find the most confident model
+    const mostConfidentModel = Object.entries(modelExplanations)
+      .filter(([_, data]: [string, any]) => data.decision === 'ANOMALY')
+      .sort(([_, a]: [string, any], [__, b]: [string, any]) => b.confidence - a.confidence)[0];
+
+    if (mostConfidentModel) {
+      const [modelName, modelData] = mostConfidentModel as [string, any];
+      explanation += `**Primary Detection by ${modelName.replace('_', ' ').toUpperCase()}:**\n`;
+      explanation += `Confidence: ${(modelData.confidence * 100).toFixed(1)}%\n\n`;
+
+      if (modelData.top_positive_features?.length > 0) {
+        explanation += `**Key Anomaly Indicators:**\n`;
+        modelData.top_positive_features.slice(0, 3).forEach((feature: any) => {
+          explanation += `• ${feature.feature}: Strong contribution (Impact: ${feature.impact?.toFixed(3) || 'N/A'})\n`;
+        });
+      }
+    }
+
+    explanation += `\n**Recommendation:** Further investigation recommended due to ${agreementCount > 2 ? 'high' : 'moderate'} algorithm consensus.`;
+
+    return explanation;
+  }
 }
 
 // Use ClickHouse storage to connect to your real anomaly data
