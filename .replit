@@ -1,0 +1,13 @@
+modules = ["nodejs-20", "python-3.11", "web"]
+run = "npm run dev"
+
+[nix]
+channel = "stable-25_05"
+packages = ["glibcLocales", "imagemagickBig", "sox", "tcpdump", "wireshark"]
+
+[deployment]
+run = ["sh", "-c", "npm run dev"]
+
+[[ports]]
+localPort = 9111
+externalPort = 80
