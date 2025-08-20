@@ -7,6 +7,8 @@ import { WebSocketServer } from "ws";
 import { spawn } from "child_process";
 import path from "path";
 import WebSocket from 'ws';
+import { clickhouse } from "@/clickhouse";
+
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -84,32 +86,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Dashboard metrics
   app.get("/api/dashboard/metrics", async (req, res) => {
     try {
+      if (!clickhouse.isAvailable()) {
+        return res.status(503).json({ 
+          error: "ClickHouse database unavailable - Real data access required" 
+        });
+      }
+
       const metrics = await storage.getDashboardMetrics();
       res.json(metrics);
     } catch (error) {
-      console.error('Error fetching dashboard metrics:', error);
-      res.status(500).json({ message: "Failed to fetch dashboard metrics" });
+      console.error("Error fetching dashboard metrics:", error);
+      res.status(500).json({ 
+        error: "Failed to fetch real dashboard metrics from ClickHouse" 
+      });
     }
   });
 
   app.get("/api/dashboard/trends", async (req, res) => {
     try {
-      const days = parseInt(req.query.days as string) || 7;
-      const trends = await storage.getAnomalyTrends(days);
+      if (!clickhouse.isAvailable()) {
+        return res.status(503).json({ 
+          error: "ClickHouse database unavailable - Real data access required" 
+        });
+      }
+
+      const trends = await storage.getAnomalyTrends(parseInt(req.query.days as string) || 7);
       res.json(trends);
     } catch (error) {
-      console.error('Error fetching anomaly trends:', error);
-      res.status(500).json({ message: "Failed to fetch anomaly trends" });
+      console.error("Error fetching anomaly trends:", error);
+      res.status(500).json({ 
+        error: "Failed to fetch real anomaly trends from ClickHouse" 
+      });
     }
   });
 
   app.get("/api/dashboard/breakdown", async (req, res) => {
     try {
+      if (!clickhouse.isAvailable()) {
+        return res.status(503).json({ 
+          error: "ClickHouse database unavailable - Real data access required" 
+        });
+      }
+
       const breakdown = await storage.getAnomalyTypeBreakdown();
       res.json(breakdown);
     } catch (error) {
-      console.error('Error fetching anomaly breakdown:', error);
-      res.status(500).json({ message: "Failed to fetch anomaly breakdown" });
+      console.error("Error fetching anomaly breakdown:", error);
+      res.status(500).json({ 
+        error: "Failed to fetch real anomaly breakdown from ClickHouse" 
+      });
     }
   });
 

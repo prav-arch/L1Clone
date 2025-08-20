@@ -22,12 +22,19 @@ class ClickHouseDB {
       const result = await this.client.query({
         query: 'SELECT 1 as test',
       });
-      console.log('✅ ClickHouse connection successful');
+      
+      // Verify database and tables exist
+      await this.client.query({
+        query: 'SELECT count() FROM l1_anomaly_detection.anomalies LIMIT 1'
+      });
+      
+      console.log('✅ ClickHouse connection successful - Real data access enabled');
       this.isConnected = true;
       return true;
     } catch (error: any) {
       console.error('❌ ClickHouse connection failed:', error.message);
-      console.error('Please ensure ClickHouse is running in the pod.');
+      console.error('❌ REAL DATA ONLY: Cannot fallback to sample data');
+      console.error('Please ensure ClickHouse pod is running with l1_anomaly_detection database');
       this.isConnected = false;
       throw error;
     }

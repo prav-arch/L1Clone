@@ -10,17 +10,17 @@ export interface IStorage {
   getAnomaly(id: string): Promise<Anomaly | undefined>;
   createAnomaly(anomaly: InsertAnomaly): Promise<Anomaly>;
   updateAnomalyStatus(id: string, status: string): Promise<Anomaly | undefined>;
-  
+
   // Files
   getProcessedFiles(): Promise<ProcessedFile[]>;
   getProcessedFile(id: string): Promise<ProcessedFile | undefined>;
   createProcessedFile(file: InsertProcessedFile): Promise<ProcessedFile>;
   updateFileStatus(id: string, status: string, anomaliesFound?: number, processingTime?: number, errorMessage?: string): Promise<ProcessedFile | undefined>;
-  
+
   // Sessions
   getSessions(): Promise<Session[]>;
   createSession(session: InsertSession): Promise<Session>;
-  
+
   // Metrics
   getMetrics(category?: string): Promise<Metric[]>;
   createMetric(metric: InsertMetric): Promise<Metric>;
@@ -42,7 +42,7 @@ export class MemStorage implements IStorage {
     this.processedFiles = new Map();
     this.sessions = new Map();
     this.metrics = new Map();
-    
+
     // Add some test anomalies for demonstration
     this.addTestAnomalies();
   }
@@ -113,9 +113,11 @@ export class MemStorage implements IStorage {
         id,
         timestamp: new Date(),
         details: anomalyData.details || null,
-        status: 'open',
+        status: anomalyData.status || 'open',
         mac_address: anomalyData.mac_address || null,
         ue_id: anomalyData.ue_id || null,
+        packet_number: anomalyData.packet_number ?? null,
+        recommendation: null,
       };
       this.anomalies.set(id, { ...anomaly, recommendation: null });
     });
@@ -128,14 +130,14 @@ export class MemStorage implements IStorage {
   // Anomalies
   async getAnomalies(limit = 50, offset = 0, type?: string, severity?: string): Promise<Anomaly[]> {
     let filtered = Array.from(this.anomalies.values());
-    
+
     if (type) {
       filtered = filtered.filter(a => a.type === type);
     }
     if (severity) {
       filtered = filtered.filter(a => a.severity === severity);
     }
-    
+
     return filtered
       .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
       .slice(offset, offset + limit);
@@ -267,34 +269,34 @@ export class MemStorage implements IStorage {
   async getAnomalyTrends(days: number): Promise<AnomalyTrend[]> {
     const trends: AnomalyTrend[] = [];
     const now = new Date();
-    
+
     for (let i = days - 1; i >= 0; i--) {
       const date = new Date(now);
       date.setDate(date.getDate() - i);
       const dateStr = date.toISOString().split('T')[0];
-      
+
       const count = Array.from(this.anomalies.values()).filter(a => {
         const anomalyDate = new Date(a.timestamp).toISOString().split('T')[0];
         return anomalyDate === dateStr;
       }).length;
-      
+
       trends.push({ date: dateStr, count });
     }
-    
+
     return trends;
   }
 
   async getAnomalyTypeBreakdown(): Promise<AnomalyTypeBreakdown[]> {
     const anomaliesArray = Array.from(this.anomalies.values());
     const total = anomaliesArray.length;
-    
+
     if (total === 0) return [];
-    
+
     const typeCounts = anomaliesArray.reduce((acc, anomaly) => {
       acc[anomaly.type] = (acc[anomaly.type] || 0) + 1;
       return acc;
     }, {} as Record<string, number>);
-    
+
     return Object.entries(typeCounts).map(([type, count]) => ({
       type,
       count,
@@ -307,7 +309,7 @@ export class MemStorage implements IStorage {
 export class ClickHouseStorage implements IStorage {
   private async execClickHouseQuery(query: string, params: any[] = []): Promise<any> {
     console.log(`ClickHouse Query: ${query}`, params);
-    
+
     try {
       const result = await clickhouse.query(query, params);
       return result;
@@ -320,7 +322,7 @@ export class ClickHouseStorage implements IStorage {
 
   private async execClickHouseQueryWithParams(query: string, queryParams: Record<string, any>): Promise<any> {
     console.log(`ClickHouse Query: ${query}`, queryParams);
-    
+
     try {
       // Always connect to ClickHouse - no fallbacks
       const result = await clickhouse.queryWithParams(query, queryParams);
@@ -423,7 +425,7 @@ export class ClickHouseStorage implements IStorage {
       params.push(limit, offset);
 
       const result = await this.execClickHouseQuery(query, params);
-      
+
       // Transform ClickHouse results to match our interface
       if (result && Array.isArray(result)) {
         return result.map((row: any) => ({
@@ -446,20 +448,20 @@ export class ClickHouseStorage implements IStorage {
           context_data: row.ml_algorithm_details || null
         }));
       }
-      
+
       return result || [];
     } catch (error) {
       console.log('ClickHouse not available, using sample data for demonstration');
       // Return sample data with proper filtering
       let sampleData = this.getSampleAnomalies();
-      
+
       if (type) {
         sampleData = sampleData.filter(a => a.type === type);
       }
       if (severity) {
         sampleData = sampleData.filter(a => a.severity === severity);
       }
-      
+
       return sampleData.slice(offset, offset + limit);
     }
   }
@@ -468,7 +470,7 @@ export class ClickHouseStorage implements IStorage {
     try {
       console.log('🔍 Looking up anomaly in ClickHouse:', id);
       const result = await this.execClickHouseQuery("SELECT * FROM l1_anomaly_detection.anomalies WHERE id = ? LIMIT 1", [id]);
-      
+
       if (result && result.length > 0) {
         const row = result[0];
         const anomaly = {
@@ -495,17 +497,17 @@ export class ClickHouseStorage implements IStorage {
             affected_users: Math.floor(Math.random() * 200) + 1
           })
         };
-        
+
         console.log('✅ Found anomaly in ClickHouse:', anomaly.id, anomaly.type);
         return anomaly;
       }
-      
+
       console.log('❌ Anomaly not found in ClickHouse, trying fallback sample data...');
-      
+
       // Use fallback sample data when ClickHouse is not available
       const sampleAnomalies = this.getSampleAnomalies();
       const foundAnomaly = sampleAnomalies.find(a => a.id === id);
-      
+
       if (foundAnomaly) {
         console.log('✅ Found anomaly in sample data:', foundAnomaly.id, foundAnomaly.type);
         return {
@@ -522,16 +524,16 @@ export class ClickHouseStorage implements IStorage {
           })
         };
       }
-      
+
       return undefined;
-      
+
     } catch (error) {
       console.error('❌ Error querying ClickHouse for anomaly:', error);
-      
+
       // Use fallback sample data when ClickHouse connection fails
       const sampleAnomalies = this.getSampleAnomalies();
       const foundAnomaly = sampleAnomalies.find(a => a.id === id);
-      
+
       if (foundAnomaly) {
         console.log('✅ Found anomaly in sample data fallback:', foundAnomaly.id, foundAnomaly.type);
         return {
@@ -548,7 +550,7 @@ export class ClickHouseStorage implements IStorage {
           })
         };
       }
-      
+
       return undefined;
     }
   }
@@ -571,7 +573,7 @@ export class ClickHouseStorage implements IStorage {
       INSERT INTO anomalies (id, timestamp, type, description, severity, source_file, mac_address, ue_id, details, status)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
-    
+
     await this.execClickHouseQuery(query, [
       anomaly.id,
       anomaly.timestamp,
@@ -620,7 +622,7 @@ export class ClickHouseStorage implements IStorage {
       INSERT INTO processed_files (id, filename, file_type, file_size, upload_date, processing_status, anomalies_found, processing_time, error_message)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
-    
+
     await this.execClickHouseQuery(query, [
       file.id,
       file.filename,
@@ -655,7 +657,7 @@ export class ClickHouseStorage implements IStorage {
 
     params.push(id);
     const query = `ALTER TABLE processed_files UPDATE ${updates.join(', ')} WHERE id = ?`;
-    
+
     await this.execClickHouseQuery(query, params);
     return this.getProcessedFile(id);
   }
@@ -680,7 +682,7 @@ export class ClickHouseStorage implements IStorage {
       INSERT INTO sessions (id, session_id, start_time, end_time, packets_analyzed, anomalies_detected, source_file)
       VALUES (?, ?, ?, ?, ?, ?, ?)
     `;
-    
+
     await this.execClickHouseQuery(query, [
       session.id,
       session.session_id,
@@ -698,14 +700,14 @@ export class ClickHouseStorage implements IStorage {
   async getMetrics(category?: string): Promise<Metric[]> {
     let query = "SELECT * FROM metrics";
     const params: any[] = [];
-    
+
     if (category) {
       query += " WHERE category = ?";
       params.push(category);
     }
-    
+
     query += " ORDER BY timestamp DESC";
-    
+
     const result = await this.execClickHouseQuery(query, params);
     return result || [];
   }
@@ -722,7 +724,7 @@ export class ClickHouseStorage implements IStorage {
       INSERT INTO metrics (id, metric_name, metric_value, timestamp, category)
       VALUES (?, ?, ?, ?, ?)
     `;
-    
+
     await this.execClickHouseQuery(query, [
       metric.id,
       metric.metric_name,
@@ -737,20 +739,20 @@ export class ClickHouseStorage implements IStorage {
   async getDashboardMetrics(): Promise<DashboardMetrics> {
     try {
       // Try to get real metrics from ClickHouse first
-      
+
       try {
         const anomalyResult = await clickhouse.query("SELECT count() FROM l1_anomaly_detection.anomalies");
         const sessionResult = await clickhouse.query("SELECT count() FROM l1_anomaly_detection.sessions");
         const fileResult = await clickhouse.query("SELECT count() FROM l1_anomaly_detection.processed_files WHERE processing_status = 'completed'");
         const totalFileResult = await clickhouse.query("SELECT count() FROM l1_anomaly_detection.processed_files");
-        
+
         const totalAnomalies = anomalyResult.data?.[0]?.['count()'] || 0;
         const sessionsAnalyzed = sessionResult.data?.[0]?.['count()'] || 0;
         const filesProcessed = fileResult.data?.[0]?.['count()'] || 0;
         const totalFiles = totalFileResult.data?.[0]?.['count()'] || 0;
-        
+
         const detectionRate = totalFiles > 0 ? (filesProcessed / totalFiles) * 100 : 0;
-        
+
         console.log('✅ Retrieved dashboard metrics from ClickHouse');
         return {
           totalAnomalies,
@@ -783,17 +785,17 @@ export class ClickHouseStorage implements IStorage {
       // Return sample trend data
       const trends: AnomalyTrend[] = [];
       const now = new Date();
-      
+
       for (let i = days - 1; i >= 0; i--) {
         const date = new Date(now);
         date.setDate(date.getDate() - i);
         const dateStr = date.toISOString().split('T')[0];
-        
+
         // Add some sample data for recent days
         const count = i < 2 ? 2 - i : 0;
         trends.push({ date: dateStr, count });
       }
-      
+
       return trends;
     } catch (error) {
       console.error('Anomaly trends error:', error);
@@ -804,7 +806,7 @@ export class ClickHouseStorage implements IStorage {
   async getAnomalyTypeBreakdown(): Promise<AnomalyTypeBreakdown[]> {
     try {
       // Use imported clickhouse instance
-      
+
       try {
         const result = await clickhouse.query(`
           SELECT 
@@ -815,7 +817,7 @@ export class ClickHouseStorage implements IStorage {
           GROUP BY anomaly_type
           ORDER BY count() DESC
         `);
-        
+
         if (result.data && result.data.length > 0) {
           console.log('✅ Retrieved anomaly breakdown from ClickHouse');
           return result.data.map((row: any) => ({
@@ -827,7 +829,7 @@ export class ClickHouseStorage implements IStorage {
       } catch (chError) {
         console.log('ClickHouse breakdown query failed, using sample data');
       }
-      
+
       // Sample data fallback
       return [
         { type: 'DU-RU Communication', count: 3, percentage: 30.0 },
