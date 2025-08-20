@@ -7,7 +7,7 @@ import { WebSocketServer } from "ws";
 import { spawn } from "child_process";
 import path from "path";
 import WebSocket from 'ws';
-import { clickhouse } from "@/clickhouse";
+import { clickhouse } from "./clickhouse.js";
 
 
 const upload = multer({
