@@ -1,0 +1,23 @@
+
+apiVersion: v1
+kind: Secret
+metadata:
+  name: tslam-config
+type: Opaque
+stringData:
+  TSLAM_REMOTE_HOST: "10.193.0.4"
+  TSLAM_REMOTE_PORT: "8080"
+  TSLAM_API_KEY: "your-tslam-api-key-if-required"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: tslam-endpoints
+data:
+  endpoints.json: |
+    {
+      "tslam_host": "10.193.0.4",
+      "tslam_port": 8080,
+      "health_check_endpoint": "/health",
+      "inference_endpoint": "/v1/chat/completions"
+    }
