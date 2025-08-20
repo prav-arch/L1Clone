@@ -30,9 +30,9 @@ def convert_decimals(obj):
 
 class ClickHouseClient:
     def __init__(self):
-        self.host = os.getenv('CLICKHOUSE_HOST', 'localhost')
+        self.host = os.getenv('CLICKHOUSE_HOST', 'clickhouse-service')
         self.port = int(os.getenv('CLICKHOUSE_PORT', '9000'))
-        self.database = os.getenv('CLICKHOUSE_DATABASE', 'l1_tool_db')
+        self.database = os.getenv('CLICKHOUSE_DATABASE', 'l1_anomaly_detection')
         self.username = os.getenv('CLICKHOUSE_USERNAME', 'default')
         self.password = os.getenv('CLICKHOUSE_PASSWORD', '')
         

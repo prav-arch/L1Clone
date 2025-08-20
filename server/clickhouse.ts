@@ -5,14 +5,14 @@ class ClickHouseDB {
   private isConnected: boolean = false;
 
   constructor() {
-    // ClickHouse client configuration for local desktop server
+    // ClickHouse client configuration for pod service
     const config = {
-      url: process.env.CLICKHOUSE_URL || 'http://127.0.0.1:8123',
+      url: process.env.CLICKHOUSE_URL || 'http://clickhouse-service:8123',
       username: process.env.CLICKHOUSE_USER || 'default',
       password: process.env.CLICKHOUSE_PASSWORD || '',
       database: process.env.CLICKHOUSE_DATABASE || 'l1_anomaly_detection',
     };
-    
+
     console.log('🔗 Connecting to ClickHouse server at:', config.url);
     this.client = createClient(config);
   }
@@ -27,7 +27,7 @@ class ClickHouseDB {
       return true;
     } catch (error: any) {
       console.error('❌ ClickHouse connection failed:', error.message);
-      console.error('Please ensure ClickHouse is running on your local desktop server');
+      console.error('Please ensure ClickHouse is running in the pod.');
       this.isConnected = false;
       throw error;
     }
@@ -39,7 +39,7 @@ class ClickHouseDB {
         query: sql,
         query_params: queryParams,
       });
-      
+
       const data = await result.json();
       return data.data || [];
     } catch (error) {
@@ -60,9 +60,9 @@ class ClickHouseDB {
           return typeof value === 'string' ? `'${value.replace(/'/g, "''")}'` : String(value);
         });
       }
-      
+
       console.log('Executing ClickHouse Query:', processedQuery);
-      
+
       // Use minimal settings for better compatibility with older ClickHouse versions
       const result = await this.client.query({
         query: processedQuery,
@@ -71,7 +71,7 @@ class ClickHouseDB {
           use_client_time_zone: 1
         }
       });
-      
+
       const data = await result.json();
       return data.data || [];
     } catch (error: any) {
