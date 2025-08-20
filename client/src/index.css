@@ -1,0 +1,221 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: hsl(0, 0%, 100%);
+  --foreground: hsl(224, 71%, 4%);
+  --muted: hsl(220, 14%, 96%);
+  --muted-foreground: hsl(220, 9%, 46%);
+  --popover: hsl(0, 0%, 100%);
+  --popover-foreground: hsl(224, 71%, 4%);
+  --card: hsl(0, 0%, 100%);
+  --card-foreground: hsl(224, 71%, 4%);
+  --border: hsl(220, 13%, 91%);
+  --input: hsl(220, 13%, 91%);
+  --primary: hsl(262, 83%, 58%);
+  --primary-foreground: hsl(210, 40%, 98%);
+  --secondary: hsl(220, 14%, 96%);
+  --secondary-foreground: hsl(220, 9%, 46%);
+  --accent: hsl(220, 14%, 96%);
+  --accent-foreground: hsl(220, 9%, 46%);
+  --destructive: hsl(0, 84%, 60%);
+  --destructive-foreground: hsl(210, 40%, 98%);
+  --ring: hsl(224, 71%, 4%);
+  --radius: 0.5rem;
+  
+  /* Custom colors for the network dashboard */
+  --primary-blue: hsl(231, 74%, 60%);
+  --primary-blue-foreground: hsl(0, 0%, 100%);
+  --success-green: hsl(142, 76%, 36%);
+  --warning-orange: hsl(38, 92%, 50%);
+  --danger-red: hsl(0, 84%, 60%);
+  --neutral-gray: hsl(220, 9%, 46%);
+  --light-gray: hsl(220, 14%, 96%);
+  --sidebar-bg: hsl(0, 0%, 100%);
+  --sidebar-border: hsl(220, 13%, 91%);
+}
+
+.dark {
+  --background: hsl(224, 71%, 4%);
+  --foreground: hsl(210, 40%, 98%);
+  --muted: hsl(223, 47%, 11%);
+  --muted-foreground: hsl(215, 20%, 65%);
+  --popover: hsl(224, 71%, 4%);
+  --popover-foreground: hsl(210, 40%, 98%);
+  --card: hsl(224, 71%, 4%);
+  --card-foreground: hsl(210, 40%, 98%);
+  --border: hsl(215, 27%, 17%);
+  --input: hsl(215, 27%, 17%);
+  --primary: hsl(262, 83%, 58%);
+  --primary-foreground: hsl(210, 40%, 98%);
+  --secondary: hsl(215, 27%, 17%);
+  --secondary-foreground: hsl(210, 40%, 98%);
+  --accent: hsl(215, 27%, 17%);
+  --accent-foreground: hsl(210, 40%, 98%);
+  --destructive: hsl(0, 62%, 30%);
+  --destructive-foreground: hsl(210, 40%, 98%);
+  --ring: hsl(216, 12%, 84%);
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply font-sans antialiased bg-background text-foreground;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  }
+}
+
+@layer components {
+  .nav-item {
+    @apply flex items-center space-x-3 px-3 py-2 text-sm font-medium text-slate-700 rounded-lg hover:bg-slate-100 hover:text-slate-900 transition-colors;
+  }
+  
+  .nav-item.active {
+    @apply text-white hover:bg-indigo-700 hover:text-white;
+    background-color: hsl(var(--primary-blue));
+    color: hsl(var(--primary-blue-foreground));
+  }
+  
+  .metric-card {
+    @apply bg-white rounded-xl shadow-sm border border-slate-200 p-6;
+  }
+  
+  .metric-icon {
+    @apply w-12 h-12 rounded-xl flex items-center justify-center;
+  }
+  
+  .metric-icon.red {
+    @apply bg-red-100 text-red-600;
+  }
+  
+  .metric-icon.blue {
+    @apply bg-blue-100 text-blue-600;
+  }
+  
+  .metric-icon.green {
+    @apply bg-green-100 text-green-600;
+  }
+  
+  .metric-icon.purple {
+    @apply bg-purple-100 text-purple-600;
+  }
+  
+  .severity-badge {
+    @apply px-2 py-1 text-xs font-medium rounded-full;
+  }
+  
+  .severity-badge.high {
+    @apply bg-red-100 text-red-700;
+  }
+  
+  .severity-badge.medium {
+    @apply bg-orange-100 text-orange-700;
+  }
+  
+  .severity-badge.low {
+    @apply bg-yellow-100 text-yellow-700;
+  }
+  
+  .type-badge {
+    @apply inline-flex items-center px-2 py-1 text-xs font-medium rounded-full;
+  }
+  
+  .type-badge.fronthaul {
+    @apply bg-red-100 text-red-700;
+  }
+  
+  .type-badge.ue_event {
+    @apply bg-orange-100 text-orange-700;
+  }
+  
+  .type-badge.mac_address {
+    @apply bg-yellow-100 text-yellow-700;
+  }
+  
+  .type-badge.protocol {
+    @apply bg-blue-100 text-blue-700;
+  }
+  
+  .status-badge {
+    @apply px-2 py-1 text-xs font-medium rounded-full;
+  }
+  
+  .status-badge.completed {
+    @apply bg-green-100 text-green-700;
+  }
+  
+  .status-badge.processing {
+    @apply bg-yellow-100 text-yellow-700;
+  }
+  
+  .status-badge.pending {
+    @apply bg-gray-100 text-gray-700;
+  }
+  
+  .status-badge.failed {
+    @apply bg-red-100 text-red-700;
+  }
+}
+
+@layer utilities {
+  .sidebar-width {
+    width: 16rem; /* 256px */
+  }
+  
+  .main-content-ml {
+    margin-left: 16rem; /* 256px */
+  }
+}
+
+/* Custom scrollbar for streaming content */
+.streaming-content::-webkit-scrollbar {
+  width: 8px;
+}
+
+.streaming-content::-webkit-scrollbar-track {
+  background: hsl(var(--muted));
+  border-radius: 4px;
+}
+
+.streaming-content::-webkit-scrollbar-thumb {
+  background: hsl(var(--border));
+  border-radius: 4px;
+}
+
+.streaming-content::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--neutral-gray));
+}
+
+/* Animation for streaming indicator */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* File upload dropzone styles */
+.upload-dropzone {
+  transition: all 0.2s ease-in-out;
+}
+
+.upload-dropzone:hover {
+  border-color: hsl(var(--primary-blue));
+  background-color: hsl(var(--light-gray));
+}
+
+.upload-dropzone.drag-over {
+  border-color: hsl(var(--primary-blue));
+  background-color: hsl(var(--light-gray));
+  transform: scale(1.02);
+}
