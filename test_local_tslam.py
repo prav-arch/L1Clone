@@ -1,4 +1,3 @@
-
 #!/usr/bin/env python3
 
 import asyncio
@@ -16,7 +15,7 @@ class LocalTSLAMTester:
         
     async def test_local_tslam_websocket(self):
         """Test local TSLAM service via WebSocket"""
-        print(f"🔍 Testing local TSLAM WebSocket at {self.ws_url}")
+        print(f"Testing local TSLAM WebSocket at {self.ws_url}")
         
         try:
             async with websockets.connect(self.ws_url) as websocket:
@@ -26,10 +25,10 @@ class LocalTSLAMTester:
                     "anomalyId": "test-anomaly-123"
                 }
                 
-                print("📤 Sending test recommendation request...")
+                print("Sending test recommendation request...")
                 await websocket.send(json.dumps(test_request))
                 
-                print("📥 Receiving streaming response:")
+                print("Receiving streaming response:")
                 print("-" * 60)
                 
                 response_chunks = []
@@ -46,12 +45,12 @@ class LocalTSLAMTester:
                             
                         elif data.get("type") == "recommendation_complete":
                             elapsed = time.time() - start_time
-                            print(f"\n\n✅ Local TSLAM streaming complete in {elapsed:.2f}s")
+                            print(f"\n\nLocal TSLAM streaming complete in {elapsed:.2f}s")
                             break
                             
                         elif data.get("type") == "error":
                             error_msg = data.get("data", "Unknown error")
-                            print(f"\n❌ Error: {error_msg}")
+                            print(f"\nError: {error_msg}")
                             break
                             
                     except json.JSONDecodeError:
@@ -61,12 +60,12 @@ class LocalTSLAMTester:
                 return "".join(response_chunks)
                 
         except Exception as e:
-            print(f"❌ Local TSLAM test failed: {str(e)}")
+            print(f"Local TSLAM test failed: {str(e)}")
             return None
     
     def test_tslam_service_direct(self):
         """Test TSLAM service directly via Python subprocess"""
-        print("🔧 Testing TSLAM service directly...")
+        print("Testing TSLAM service directly...")
         
         try:
             # Test the TSLAM service directly
@@ -77,7 +76,7 @@ class LocalTSLAMTester:
                 "Fronthaul timing violation detected - DU-RU latency exceeded 100μs threshold"
             ]
             
-            print(f"📤 Running: {' '.join(cmd)}")
+            print(f"Running: {' '.join(cmd)}")
             
             process = subprocess.Popen(
                 cmd,
@@ -87,7 +86,7 @@ class LocalTSLAMTester:
                 bufsize=1
             )
             
-            print("📥 Direct TSLAM output:")
+            print("Direct TSLAM output:")
             print("-" * 60)
             
             # Read streaming output
@@ -97,22 +96,22 @@ class LocalTSLAMTester:
             process.wait()
             
             if process.returncode == 0:
-                print("✅ Direct TSLAM service test completed successfully")
+                print("Direct TSLAM service test completed successfully")
                 return True
             else:
-                print(f"❌ TSLAM service failed with exit code: {process.returncode}")
+                print(f"TSLAM service failed with exit code: {process.returncode}")
                 stderr_output = process.stderr.read()
                 if stderr_output:
                     print(f"Error output: {stderr_output}")
                 return False
                 
         except Exception as e:
-            print(f"❌ Direct TSLAM test failed: {str(e)}")
+            print(f"Direct TSLAM test failed: {str(e)}")
             return False
 
 async def main():
     """Main test function for local TSLAM"""
-    print("🤖 Local TSLAM Streaming Test Script")
+    print("Local TSLAM Streaming Test Script")
     print("=" * 50)
     
     local_port = 5000
@@ -131,7 +130,7 @@ async def main():
     
     # Summary
     print("\n" + "=" * 50)
-    print("📋 Local TSLAM Test Summary:")
+    print("Local TSLAM Test Summary:")
     print(f"{'✅' if direct_result else '❌'} Direct Service: {'Passed' if direct_result else 'Failed'}")
     print(f"{'✅' if ws_result else '❌'} WebSocket Test: {'Passed' if ws_result else 'Failed'}")
 
@@ -143,6 +142,6 @@ if __name__ == "__main__":
     try:
         asyncio.run(main())
     except KeyboardInterrupt:
-        print("\n⏹️  Test interrupted by user")
+        print("\nTest interrupted by user")
     except Exception as e:
-        print(f"\n💥 Test script failed: {str(e)}")
+        print(f"\nTest script failed: {str(e)}")

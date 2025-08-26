@@ -28,9 +28,9 @@ class LLMServerHandler:
         if not os.path.exists(model_path):
             raise FileNotFoundError(f"Model not found at: {model_path}")
         
-        print(f"🤖 Initializing LLM Server")
-        print(f"📁 Model Path: {model_path}")
-        print(f"🌐 Server: {host}:{port}")
+        print(f"Initializing LLM Server")
+        print(f"Model Path: {model_path}")
+        print(f"Server: {host}:{port}")
     
     def start_llama_server(self):
         """Start llama.cpp server in background"""
@@ -64,7 +64,7 @@ class LLMServerHandler:
                 "--batch-size", "512"
             ]
             
-            print(f"🚀 Starting llama.cpp server: {' '.join(cmd)}")
+            print(f"Starting llama.cpp server: {' '.join(cmd)}")
             
             self.llama_process = subprocess.Popen(
                 cmd,
@@ -80,24 +80,24 @@ class LLMServerHandler:
                     response = requests.get("http://127.0.0.1:8081/health", timeout=2)
                     if response.status_code == 200:
                         self.llama_ready = True
-                        print("✅ Llama.cpp server is ready")
+                        print("Llama.cpp server is ready")
                         return True
                 except:
                     pass
                 time.sleep(2)
-                print(f"⏳ Waiting for llama.cpp server... ({i+1}/30)")
+                print(f"Waiting for llama.cpp server... ({i+1}/30)")
             
-            print("❌ Failed to start llama.cpp server")
+            print("Failed to start llama.cpp server")
             return False
             
         except Exception as e:
-            print(f"❌ Error starting llama.cpp server: {e}")
+            print(f"Error starting llama.cpp server: {e}")
             return False
     
     async def handle_websocket(self, websocket, path):
         """Handle WebSocket connections for streaming"""
         self.websocket_clients.add(websocket)
-        print(f"📡 New WebSocket client connected. Total: {len(self.websocket_clients)}")
+        print(f"New WebSocket client connected. Total: {len(self.websocket_clients)}")
         
         try:
             async for message in websocket:
@@ -108,7 +108,7 @@ class LLMServerHandler:
                     temperature = request.get("temperature", 0.3)
                     stream = request.get("stream", True)
                     
-                    print(f"📝 Processing prompt: {prompt[:100]}...")
+                    print(f"Processing prompt: {prompt[:100]}...")
                     
                     if stream:
                         await self.stream_completion(websocket, prompt, max_tokens, temperature)
@@ -130,7 +130,7 @@ class LLMServerHandler:
             pass
         finally:
             self.websocket_clients.discard(websocket)
-            print(f"📡 WebSocket client disconnected. Total: {len(self.websocket_clients)}")
+            print(f"WebSocket client disconnected. Total: {len(self.websocket_clients)}")
     
     async def stream_completion(self, websocket, prompt, max_tokens, temperature):
         """Stream completion response token by token"""
@@ -298,7 +298,7 @@ async def main():
     
     args = parser.parse_args()
     
-    print("🚀 Remote LLM Server Starting...")
+    print("Remote LLM Server Starting...")
     print("=" * 50)
     
     # Initialize handler
@@ -311,14 +311,14 @@ async def main():
     # Start llama.cpp server
     if not args.no_llama_server:
         if not handler.start_llama_server():
-            print("❌ Failed to start LLM backend")
+            print("Failed to start LLM backend")
             sys.exit(1)
     
     # Start HTTP health server
     http_server = HTTPServer((args.host, args.port), HTTPHealthHandler)
     http_thread = threading.Thread(target=http_server.serve_forever, daemon=True)
     http_thread.start()
-    print(f"🌐 HTTP server started on {args.host}:{args.port}")
+    print(f"HTTP server started on {args.host}:{args.port}")
     
     # Start WebSocket server  
     websocket_server = await websockets.serve(
@@ -327,21 +327,21 @@ async def main():
         args.port,
         subprotocols=["analyze"]
     )
-    print(f"📡 WebSocket server started on ws://{args.host}:{args.port}/ws/analyze")
+    print(f"WebSocket server started on ws://{args.host}:{args.port}/ws/analyze")
     
-    print("\n✅ Remote LLM Server is ready!")
-    print(f"🔗 Health check: http://{args.host}:{args.port}/health")
-    print(f"📡 WebSocket: ws://{args.host}:{args.port}/ws/analyze")
-    print(f"🛑 Press Ctrl+C to stop")
+    print("\nRemote LLM Server is ready!")
+    print(f"Health check: http://{args.host}:{args.port}/health")
+    print(f"WebSocket: ws://{args.host}:{args.port}/ws/analyze")
+    print(f"Press Ctrl+C to stop")
     
     try:
         await websocket_server.wait_closed()
     except KeyboardInterrupt:
-        print("\n🛑 Stopping server...")
+        print("\nStopping server...")
         if handler.llama_process:
             handler.llama_process.terminate()
         http_server.shutdown()
-        print("✅ Server stopped")
+        print("Server stopped")
 
 if __name__ == "__main__":
     try:
@@ -349,5 +349,5 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         pass
     except Exception as e:
-        print(f"❌ Server error: {e}")
+        print(f"Server error: {e}")
         sys.exit(1)

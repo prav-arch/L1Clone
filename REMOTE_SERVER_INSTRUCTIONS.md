@@ -198,10 +198,10 @@ Options:
 ```
 
 The server will:
-1. ✅ Initialize the LLM from your model folder
-2. ✅ Accept prompts from your local machine
-3. ✅ Stream responses back in real-time
-4. ✅ Handle multiple concurrent connections
-5. ✅ Provide health check endpoints
+1. Initialize the LLM from your model folder
+2. Accept prompts from your local machine
+3. Stream responses back in real-time
+4. Handle multiple concurrent connections
+5. Provide health check endpoints
 
 Your local test scripts should work immediately once this server is running!

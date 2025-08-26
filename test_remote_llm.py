@@ -18,30 +18,30 @@ class RemoteLLMTester:
         
     def test_health_check(self):
         """Test if remote LLM server is available"""
-        print(f"🔍 Testing connection to {self.base_url}")
+        print(f"Testing connection to {self.base_url}")
         try:
             response = requests.get(f"{self.base_url}/health", timeout=10)
             if response.status_code == 200:
-                print("✅ Remote LLM server is healthy")
+                print("Remote LLM server is healthy")
                 return True
             else:
-                print(f"❌ Server responded with status: {response.status_code}")
+                print(f"Server responded with status: {response.status_code}")
                 return False
         except requests.exceptions.ConnectionError:
-            print(f"❌ Connection failed - server may be down")
+            print(f"Connection failed - server may be down")
             return False
         except requests.exceptions.Timeout:
-            print(f"❌ Connection timeout - server may be slow")
+            print(f"Connection timeout - server may be slow")
             return False
         except Exception as e:
-            print(f"❌ Health check failed: {str(e)}")
+            print(f"Health check failed: {str(e)}")
             return False
     
     async def test_streaming_analysis(self, prompt, test_name="Test"):
         """Test streaming analysis from remote LLM"""
-        print(f"\n🚀 Starting {test_name}")
-        print(f"📡 Connecting to: {self.ws_url}")
-        print(f"📝 Prompt: {prompt[:100]}...")
+        print(f"\nStarting {test_name}")
+        print(f"Connecting to: {self.ws_url}")
+        print(f"Prompt: {prompt[:100]}...")
         
         try:
             async with websockets.connect(self.ws_url, ping_timeout=60) as websocket:
@@ -53,11 +53,11 @@ class RemoteLLMTester:
                     "stream": True
                 }
                 
-                print("📤 Sending request...")
+                print("Sending request...")
                 await websocket.send(json.dumps(request_data))
                 
                 # Receive streaming response
-                print("📥 Receiving streaming response:")
+                print("Receiving streaming response:")
                 print("-" * 60)
                 
                 response_chunks = []
@@ -82,14 +82,14 @@ class RemoteLLMTester:
                         elif data.get("type") == "complete":
                             # Analysis complete
                             elapsed = time.time() - start_time
-                            print(f"\n\n✅ Streaming complete in {elapsed:.2f}s")
-                            print(f"📊 Total response length: {len(''.join(response_chunks))} characters")
+                            print(f"\n\nStreaming complete in {elapsed:.2f}s")
+                            print(f"Total response length: {len(''.join(response_chunks))} characters")
                             break
                             
                         elif data.get("type") == "error":
                             # Error occurred
                             error_msg = data.get("content", "Unknown error")
-                            print(f"\n❌ Error: {error_msg}")
+                            print(f"\nError: {error_msg}")
                             break
                             
                     except json.JSONDecodeError:
@@ -100,10 +100,10 @@ class RemoteLLMTester:
                 return "".join(response_chunks)
                 
         except websockets.exceptions.ConnectionClosed:
-            print(f"\n❌ WebSocket connection closed unexpectedly")
+            print(f"\nWebSocket connection closed unexpectedly")
             return None
         except Exception as e:
-            print(f"\n❌ Streaming test failed: {str(e)}")
+            print(f"\nStreaming test failed: {str(e)}")
             return None
     
     async def test_telecom_anomaly_analysis(self):
@@ -117,7 +117,7 @@ ANOMALY DATA:
 - Packet Loss: 0.02%
 - Jitter: 45μs
 - eCPRI Flows: 1,247 packets
-- MAC Addresses: DU (00:11:22:33:44:67) ↔ RU (6c:ad:ad:00:03:2a)
+- MAC Addresses: DU (00:11:22:33:44:67) <-> RU (6c:ad:ad:00:03:2a)
 
 REQUIREMENTS:
 1. Identify root cause of timing violation
@@ -144,7 +144,7 @@ Provide a comprehensive technical explanation suitable for network engineers."""
     
     def test_rest_api(self):
         """Test REST API endpoint if available"""
-        print(f"\n🔗 Testing REST API endpoint")
+        print(f"\nTesting REST API endpoint")
         try:
             payload = {
                 "prompt": "What are the key 5G fronthaul timing requirements?",
@@ -160,20 +160,20 @@ Provide a comprehensive technical explanation suitable for network engineers."""
             
             if response.status_code == 200:
                 result = response.json()
-                print("✅ REST API test successful")
-                print(f"📝 Response: {result.get('response', 'No response field')[:200]}...")
+                print("REST API test successful")
+                print(f"Response: {result.get('response', 'No response field')[:200]}...")
                 return True
             else:
-                print(f"❌ REST API failed with status: {response.status_code}")
+                print(f"REST API failed with status: {response.status_code}")
                 return False
                 
         except Exception as e:
-            print(f"❌ REST API test failed: {str(e)}")
+            print(f"REST API test failed: {str(e)}")
             return False
 
 async def main():
     """Main test function"""
-    print("🤖 Remote LLM Streaming Test Script")
+    print("Remote LLM Streaming Test Script")
     print("=" * 50)
     
     # Configuration
@@ -190,7 +190,7 @@ async def main():
     
     # Test 1: Health check
     if not tester.test_health_check():
-        print("\n⚠️  Cannot proceed - remote server is not accessible")
+        print("\nCannot proceed - remote server is not accessible")
         return
     
     # Test 2: REST API (if available)
@@ -204,12 +204,12 @@ async def main():
     
     # Summary
     print("\n" + "=" * 50)
-    print("📋 Test Summary:")
-    print(f"✅ Health Check: Passed")
-    print(f"{'✅' if result1 else '❌'} Telecom Analysis: {'Passed' if result1 else 'Failed'}")
-    print(f"{'✅' if result2 else '❌'} General LLM Test: {'Passed' if result2 else 'Failed'}")
+    print("Test Summary:")
+    print(f"Health Check: Passed")
+    print(f"Telecom Analysis: {'Passed' if result1 else 'Failed'}")
+    print(f"General LLM Test: {'Passed' if result2 else 'Failed'}")
     
-    print(f"\n🔧 Connection Details:")
+    print(f"\nConnection Details:")
     print(f"   Host: {remote_host}")
     print(f"   Port: {remote_port}")
     print(f"   WebSocket: ws://{remote_host}:{remote_port}/ws/analyze")
@@ -223,6 +223,6 @@ if __name__ == "__main__":
     try:
         asyncio.run(main())
     except KeyboardInterrupt:
-        print("\n⏹️  Test interrupted by user")
+        print("\nTest interrupted by user")
     except Exception as e:
-        print(f"\n💥 Test script failed: {str(e)}")
+        print(f"\nTest script failed: {str(e)}")
