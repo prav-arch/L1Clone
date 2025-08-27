@@ -80,14 +80,13 @@
 
 ### Quick Start
 ```bash
-cd l1_troubleshooting_clone
 npm install
 pip install -r requirements_mistral.txt
 npm run dev
 ```
 
 ### Development Server
-- **URL**: http://localhost:5000
+- **URL**: http://0.0.0.0:5000
 - **API**: REST endpoints + WebSocket streaming
 - **Hot Reload**: Vite HMR for frontend changes
 - **Auto-restart**: tsx for backend TypeScript
@@ -104,18 +103,9 @@ python enhanced_ml_analyzer.py
 python folder_anomaly_analyzer_clickhouse.py
 ```
 
-## Independence from Original
+## Deployment
 
-This clone is completely independent and can be modified without affecting the original system. All future development work should be done in this cloned environment.
-
-### Separate Database
-The clone maintains its own database schema and can use separate database instances if needed.
-
-### Independent AI Model
-TSLAM-4B integration is preserved but can be modified or upgraded independently.
-
-### Standalone Deployment
-The clone can be deployed independently with its own environment configuration.
+This application can be deployed independently with its own environment configuration.iguration.
 
 ## Next Steps
 

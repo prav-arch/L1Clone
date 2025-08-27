@@ -2,7 +2,7 @@
 
 ## Quick Start
 
-This is a complete clone of the L1 Network Troubleshooting System with full TSLAM-4B AI integration and ClickHouse database support.
+This is a complete L1 Network Troubleshooting System with full TSLAM-4B AI integration and ClickHouse database support.
 
 ### Prerequisites
 
@@ -31,7 +31,7 @@ npm run db:push
 npm run dev
 ```
 
-The application will be available at `http://localhost:5000`
+The application will be available at `http://0.0.0.0:5000`
 
 ## Core Features
 
