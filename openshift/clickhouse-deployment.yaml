@@ -3,6 +3,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: clickhouse
+  namespace: l1-app
   labels:
     app: clickhouse
 spec:
@@ -31,22 +32,28 @@ spec:
         volumeMounts:
         - name: clickhouse-data
           mountPath: /var/lib/clickhouse
+        - name: shared-data
+          mountPath: /var/lib/clickhouse/shared
         resources:
           requests:
             memory: "1Gi"
             cpu: "500m"
           limits:
-            memory: "2Gi"
-            cpu: "1000m"
+            memory: "4Gi"
+            cpu: "2000m"
       volumes:
       - name: clickhouse-data
         persistentVolumeClaim:
           claimName: clickhouse-pvc
+      - name: shared-data
+        persistentVolumeClaim:
+          claimName: shared-data-pvc
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: clickhouse-service
+  namespace: l1-app
 spec:
   selector:
     app: clickhouse
@@ -65,9 +72,10 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: clickhouse-pvc
+  namespace: l1-app
 spec:
   accessModes:
     - ReadWriteOnce
   resources:
     requests:
-      storage: 10Gi
+      storage: 20Gi
