@@ -11,8 +11,13 @@ import { clickhouse } from "./clickhouse.js";
 
 
 const upload = multer({
-  storage: multer.memoryStorage(),
-  limits: { fileSize: 100 * 1024 * 1024 } // 100MB limit
+  storage: multer.diskStorage({
+    destination: '/tmp',
+    filename: (req, file, cb) => {
+      cb(null, `${Date.now()}-${file.originalname}`);
+    }
+  }),
+  limits: { fileSize: 3 * 1024 * 1024 * 1024 } // 3GB limit
 });
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -243,17 +248,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
           let anomaliesFound = 0;
 
           if (fileType === 'pcap') {
+            // Check file size and choose appropriate processor
+            const fileSizeGB = size / (1024 * 1024 * 1024);
+            const processorScript = fileSizeGB > 0.5 ? 
+              'server/services/large_pcap_processor.py' : 
+              'server/services/pcap_processor.py';
+            
+            console.log(`File size: ${fileSizeGB.toFixed(2)}GB, using ${processorScript}`);
+            
             // Process PCAP file
             const pythonProcess = spawn('python3', [
-              path.join(process.cwd(), 'server/services/pcap_processor.py'),
+              path.join(process.cwd(), processorScript),
               '--file-id', file.id,
-              '--filename', originalname
+              '--filename', originalname,
+              ...(fileSizeGB > 0.5 ? ['--chunk-size', '5000'] : [])
             ]);
 
-            // Save file content to temp location for processing
-            const fs = require('fs');
-            const tempPath = path.join('/tmp', originalname);
-            fs.writeFileSync(tempPath, buffer);
+            // File is already saved to disk by multer
+            const tempPath = req.file.path;
 
             pythonProcess.stdin.write(tempPath);
             pythonProcess.stdin.end();
