@@ -46,6 +46,14 @@ spec:
           value: "8080"
         - name: JUPYTER_SERVICE_URL
           value: "http://jupyter-service.l1-app.svc.cluster.local:8888"
+        - name: MODEL_PATH
+          value: "/app/models/tslam-4b.gguf"
+        - name: RHOAI_MODEL_SERVING
+          value: "true"
+        - name: RHOAI_INFERENCE_ENDPOINT
+          value: "http://localhost:8081"
+        - name: CUDA_VISIBLE_DEVICES
+          value: "0"
         command: ["/bin/sh"]
         args: ["-c", "npm install && npm run build && npm start"]
         workingDir: /app
@@ -54,13 +62,17 @@ spec:
           mountPath: /app
         - name: shared-data
           mountPath: /app/shared
+        - name: model-storage
+          mountPath: /app/models
         resources:
           requests:
-            memory: "1Gi"
-            cpu: "500m"
-          limits:
-            memory: "2Gi"
+            memory: "4Gi"
             cpu: "1000m"
+            nvidia.com/gpu: "1"
+          limits:
+            memory: "8Gi"
+            cpu: "2000m"
+            nvidia.com/gpu: "1"
         livenessProbe:
           httpGet:
             path: /health
@@ -80,3 +92,9 @@ spec:
       - name: shared-data
         persistentVolumeClaim:
           claimName: shared-data-pvc
+      - name: model-storage
+        persistentVolumeClaim:
+          claimName: model-pvc
+      nodeSelector:
+        node.openshift.io/os_id: rhcos
+        nvidia.com/gpu.present: "true"

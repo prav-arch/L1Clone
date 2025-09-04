@@ -23,6 +23,7 @@ class LLMServerHandler:
         self.llama_process = None
         self.llama_ready = False
         self.websocket_clients = set()
+        self.rhoai_mode = os.getenv("RHOAI_MODEL_SERVING", "false").lower() == "true"
         
         # Validate model exists
         if not os.path.exists(model_path):
@@ -53,15 +54,19 @@ class LLMServerHandler:
             if not llama_server_path:
                 raise FileNotFoundError("llama-server not found. Please install llama.cpp")
             
+            # RHOAI GPU optimization
+            gpu_layers = "35" if self.rhoai_mode and os.getenv("CUDA_VISIBLE_DEVICES") else "0"
+            
             cmd = [
                 llama_server_path,
                 "--model", self.model_path,
                 "--host", "127.0.0.1",
-                "--port", "8081",  # Internal port for llama.cpp
+                "--port", "8081",
                 "--ctx-size", "4096",
                 "--n-predict", "-1",
-                "--threads", "4",
-                "--batch-size", "512"
+                "--threads", "8" if self.rhoai_mode else "4",
+                "--batch-size", "1024" if self.rhoai_mode else "512",
+                "--n-gpu-layers", gpu_layers
             ]
             
             print(f"Starting llama.cpp server: {' '.join(cmd)}")
