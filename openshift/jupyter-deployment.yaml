@@ -97,10 +97,13 @@ kind: PersistentVolumeClaim
 metadata:
   name: jupyter-pvc
   namespace: l1-app
+  annotations:
+    volume.beta.kubernetes.io/storage-class: "standard-csi"
 spec:
   accessModes:
     - ReadWriteOnce
   storageClassName: standard-csi
+  volumeMode: Filesystem
   resources:
     requests:
       storage: 5Gi
@@ -110,10 +113,13 @@ kind: PersistentVolumeClaim
 metadata:
   name: shared-data-pvc
   namespace: l1-app
+  annotations:
+    volume.beta.kubernetes.io/storage-class: "standard-csi"
 spec:
   accessModes:
     - ReadWriteMany
   storageClassName: standard-csi
+  volumeMode: Filesystem
   resources:
     requests:
       storage: 10Gi

@@ -4,11 +4,14 @@ kind: PersistentVolumeClaim
 metadata:
   name: model-pvc
   namespace: l1-app
+  annotations:
+    volume.beta.kubernetes.io/storage-class: "standard-csi"
 spec:
   accessModes:
     - ReadWriteOnce
+  storageClassName: standard-csi
+  volumeMode: Filesystem
   resources:
     requests:
       storage: 50Gi
-  storageClassName: fast-ssd
 ---
