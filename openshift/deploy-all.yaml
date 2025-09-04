@@ -6,33 +6,39 @@ echo "========================================================="
 
 # Create namespace first
 echo "Creating namespace..."
-oc apply -f namespace.yaml
+oc apply -f openshift/namespace.yaml
 
 # Deploy ClickHouse (data layer)
 echo "Deploying ClickHouse..."
-oc apply -f clickhouse-deployment.yaml
+oc apply -f openshift/clickhouse-deployment.yaml
 
 # Deploy Jupyter Notebook (analysis environment)
 echo "Deploying Jupyter Notebook..."
-oc apply -f jupyter-deployment.yaml
+oc apply -f openshift/jupyter-deployment.yaml
 
 # Deploy ConfigMap and Secrets
 echo "Deploying configuration..."
-oc apply -f configmap.yaml
+oc apply -f openshift/configmap.yaml
 
 # Deploy L1 Troubleshooting Application
 echo "Deploying L1 Application..."
-oc apply -f deployment.yaml
+oc apply -f openshift/deployment.yaml
 
 # Deploy Services and Routes
 echo "Deploying services..."
-oc apply -f service.yaml
+oc apply -f openshift/service.yaml
+
+# Wait for PVCs to be bound first
+echo "Waiting for PVCs to be bound..."
+oc wait --for=condition=Bound pvc/clickhouse-pvc -n l1-app --timeout=300s
+oc wait --for=condition=Bound pvc/jupyter-pvc -n l1-app --timeout=300s
+oc wait --for=condition=Bound pvc/shared-data-pvc -n l1-app --timeout=300s
 
 # Wait for deployments
 echo "Waiting for deployments to be ready..."
-oc rollout status deployment/clickhouse -n l1-app
-oc rollout status deployment/jupyter-notebook -n l1-app
-oc rollout status deployment/l1-troubleshooting -n l1-app
+oc rollout status deployment/clickhouse -n l1-app --timeout=300s
+oc rollout status deployment/jupyter-notebook -n l1-app --timeout=300s
+oc rollout status deployment/l1-troubleshooting -n l1-app --timeout=300s
 
 echo ""
 echo "Deployment completed successfully!"

@@ -6,3 +6,10 @@ metadata:
   labels:
     name: l1-app
     purpose: l1-troubleshooting-platform
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: l1-app
+  labels:
+    name: l1-app
+    app: l1-troubleshooting
