@@ -32,23 +32,23 @@ class ClickHouseTableSetup:
                 password=os.getenv('CLICKHOUSE_PASSWORD', ''),
                 database=os.getenv('CLICKHOUSE_DATABASE', 'default')
             )
-            print(f"✅ Connected to ClickHouse at {os.getenv('CLICKHOUSE_HOST', 'clickhouse-service')}")
+            print(f"[SUCCESS] Connected to ClickHouse at {os.getenv('CLICKHOUSE_HOST', 'clickhouse-service')}")
         except Exception as e:
-            print(f"❌ Failed to connect to ClickHouse: {e}")
+            print(f"[ERROR] Failed to connect to ClickHouse: {e}")
             sys.exit(1)
     
     def create_database(self):
         """Create the l1_anomaly_detection database"""
         try:
             self.client.command("CREATE DATABASE IF NOT EXISTS l1_anomaly_detection")
-            print("✅ Created database: l1_anomaly_detection")
+            print("[SUCCESS] Created database: l1_anomaly_detection")
         except Exception as e:
-            print(f"❌ Failed to create database: {e}")
+            print(f"[ERROR] Failed to create database: {e}")
             raise
     
     def create_all_tables(self):
         """Create all required tables"""
-        print("\n🔧 Creating ClickHouse tables...")
+        print("\n[INFO] Creating ClickHouse tables...")
         
         # Create database first
         self.create_database()
@@ -72,10 +72,10 @@ class ClickHouseTableSetup:
             try:
                 create_table_func()
             except Exception as e:
-                print(f"❌ Failed to create table: {e}")
+                print(f"[ERROR] Failed to create table: {e}")
                 continue
         
-        print("\n✅ All tables created successfully!")
+        print("\n[SUCCESS] All tables created successfully!")
     
     def create_anomalies_table(self):
         """Create main anomalies table (enhanced version)"""
@@ -119,7 +119,7 @@ class ClickHouseTableSetup:
         """
         
         self.client.command(table_sql)
-        print("✅ Created table: anomalies")
+        print("[SUCCESS] Created table: anomalies")
     
     def create_comprehensive_anomalies_table(self):
         """Create comprehensive anomalies table for advanced analysis"""
@@ -152,7 +152,7 @@ class ClickHouseTableSetup:
         """
         
         self.client.command(table_sql)
-        print("✅ Created table: comprehensive_anomalies")
+        print("[SUCCESS] Created table: comprehensive_anomalies")
     
     def create_sessions_table(self):
         """Create sessions table"""
@@ -181,7 +181,7 @@ class ClickHouseTableSetup:
         """
         
         self.client.command(table_sql)
-        print("✅ Created table: sessions")
+        print("[SUCCESS] Created table: sessions")
     
     def create_l1_analysis_sessions_table(self):
         """Create L1 analysis sessions table"""
@@ -212,7 +212,7 @@ class ClickHouseTableSetup:
         """
         
         self.client.command(table_sql)
-        print("✅ Created table: l1_analysis_sessions")
+        print("[SUCCESS] Created table: l1_analysis_sessions")
     
     def create_processed_files_table(self):
         """Create processed files table"""
@@ -236,7 +236,7 @@ class ClickHouseTableSetup:
         """
         
         self.client.command(table_sql)
-        print("✅ Created table: processed_files")
+        print("[SUCCESS] Created table: processed_files")
     
     def create_metrics_table(self):
         """Create metrics table"""
@@ -254,7 +254,7 @@ class ClickHouseTableSetup:
         """
         
         self.client.command(table_sql)
-        print("✅ Created table: metrics")
+        print("[SUCCESS] Created table: metrics")
     
     def create_ue_events_table(self):
         """Create UE events table"""
@@ -279,7 +279,7 @@ class ClickHouseTableSetup:
         """
         
         self.client.command(table_sql)
-        print("✅ Created table: ue_events")
+        print("[SUCCESS] Created table: ue_events")
     
     def create_pcap_analysis_table(self):
         """Create PCAP analysis results table"""
@@ -302,7 +302,7 @@ class ClickHouseTableSetup:
         """
         
         self.client.command(table_sql)
-        print("✅ Created table: pcap_analysis")
+        print("[SUCCESS] Created table: pcap_analysis")
     
     def create_ml_results_table(self):
         """Create ML results table"""
@@ -325,7 +325,7 @@ class ClickHouseTableSetup:
         """
         
         self.client.command(table_sql)
-        print("✅ Created table: ml_results")
+        print("[SUCCESS] Created table: ml_results")
     
     def create_correlations_table(self):
         """Create correlations table"""
@@ -345,7 +345,7 @@ class ClickHouseTableSetup:
         """
         
         self.client.command(table_sql)
-        print("✅ Created table: correlations")
+        print("[SUCCESS] Created table: correlations")
     
     def create_recommendations_table(self):
         """Create recommendations table"""
@@ -367,11 +367,11 @@ class ClickHouseTableSetup:
         """
         
         self.client.command(table_sql)
-        print("✅ Created table: recommendations")
+        print("[SUCCESS] Created table: recommendations")
     
     def verify_tables(self):
         """Verify all tables were created successfully"""
-        print("\n🔍 Verifying table creation...")
+        print("\n[INFO] Verifying table creation...")
         
         tables_query = """
         SELECT name, engine, total_rows, total_bytes
@@ -383,7 +383,7 @@ class ClickHouseTableSetup:
         try:
             result = self.client.query(tables_query)
             
-            print(f"\n📊 Found {len(result.result_rows)} tables in l1_anomaly_detection database:")
+            print(f"\n[INFO] Found {len(result.result_rows)} tables in l1_anomaly_detection database:")
             print("-" * 80)
             print(f"{'Table Name':<25} {'Engine':<15} {'Rows':<10} {'Size (bytes)':<15}")
             print("-" * 80)
@@ -395,11 +395,11 @@ class ClickHouseTableSetup:
             print("-" * 80)
             
         except Exception as e:
-            print(f"❌ Failed to verify tables: {e}")
+            print(f"[ERROR] Failed to verify tables: {e}")
     
     def create_sample_data(self):
         """Create sample data for testing"""
-        print("\n📝 Creating sample data...")
+        print("\n[INFO] Creating sample data...")
         
         try:
             # Sample anomaly
@@ -440,7 +440,7 @@ class ClickHouseTableSetup:
             
             # Insert sample data
             self.client.insert('l1_anomaly_detection.anomalies', [anomaly_data])
-            print("✅ Created sample anomaly record")
+            print("[SUCCESS] Created sample anomaly record")
             
             # Sample session
             session_data = {
@@ -465,14 +465,14 @@ class ClickHouseTableSetup:
             }
             
             self.client.insert('l1_anomaly_detection.sessions', [session_data])
-            print("✅ Created sample session record")
+            print("[SUCCESS] Created sample session record")
             
         except Exception as e:
-            print(f"⚠️ Failed to create sample data: {e}")
+            print(f"[WARNING] Failed to create sample data: {e}")
 
 def main():
     """Main function"""
-    print("🚀 ClickHouse Table Setup for L1 Troubleshooting Application")
+    print("[INFO] ClickHouse Table Setup for L1 Troubleshooting Application")
     print("=" * 70)
     
     # Initialize setup
@@ -488,14 +488,14 @@ def main():
         # Create sample data
         setup.create_sample_data()
         
-        print("\n🎉 ClickHouse setup completed successfully!")
+        print("\n[SUCCESS] ClickHouse setup completed successfully!")
         print("\nYou can now run your L1 troubleshooting applications.")
         print("\nTo verify the setup:")
         print("  1. Check tables: SELECT * FROM system.tables WHERE database = 'l1_anomaly_detection'")
         print("  2. Check sample data: SELECT * FROM l1_anomaly_detection.anomalies LIMIT 5")
         
     except Exception as e:
-        print(f"\n❌ Setup failed: {e}")
+        print(f"\n[ERROR] Setup failed: {e}")
         sys.exit(1)
 
 if __name__ == "__main__":
